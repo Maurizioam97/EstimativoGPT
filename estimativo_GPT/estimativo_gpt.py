@@ -2,8 +2,8 @@ import pandas as pd
 import nltk
 from nltk.tokenize import word_tokenize
 import streamlit as st
-import requests
 import openpyxl
+import requests
 
 # Scarica le risorse di NLTK se necessario
 nltk.download('punkt')
@@ -41,41 +41,29 @@ def ricerca_web(query):
     response = requests.get(endpoint, headers=headers, params=params)
 
     if response.status_code == 200:
-        return response.json()
+        return [item["snippet"] for item in response.json().get("webPages", {}).get("value", [])]
     else:
         print("Errore nella ricerca:", response.status_code, response.text)
-        return None
+        return []
 
-# Funzione aggiornata per ottenere suggerimenti con CATEGORIA e DESCRIZIONE DETTAGLIATA
-def suggerisci_lavorazioni(macroarea, ricerca_testuale):
-    # Recupera le istruzioni per la macroarea
-    istruzioni = dict_lavorazioni.get(macroarea, [])
+# Funzione aggiornata per ottenere suggerimenti con priorità alla ricerca web
+def suggerisci_lavorazioni(macroarea, query):
+    # Risultati della ricerca web
+    risultati_web = ricerca_web(f"{macroarea} {query}")
 
-    # Filtra le voci dello storico con la categoria selezionata
+    # Istruzioni per la macroarea dai file locali
+    istruzioni_locale = dict_lavorazioni.get(macroarea, [])
+
+    # Esempi storici per la categoria selezionata
     esempi_lavorazioni = df_esempio[
         df_esempio['CATEGORIA'].str.contains(macroarea, case=False, na=False)
     ].dropna(subset=["DESCRIZIONE DETTAGLIATA"])
 
-    # Filtra risultati in base al campo di ricerca testuale
-    if ricerca_testuale:
-        risultati_istruzioni = [istr for istr in istruzioni if ricerca_testuale.lower() in istr.lower()]
-        risultati_esempi = esempi_lavorazioni[esempi_lavorazioni['DESCRIZIONE DETTAGLIATA'].str.contains(ricerca_testuale, case=False, na=False)]
-    else:
-        risultati_istruzioni = istruzioni
-        risultati_esempi = esempi_lavorazioni
-
-    # Se non ci sono risultati nei file locali, effettua una ricerca web
-    risultati_ricerca = []
-    if not risultati_istruzioni and risultati_esempi.empty and ricerca_testuale:
-        risultati_bing = ricerca_web(f"{ricerca_testuale} computo metrico {macroarea}")
-        if risultati_bing:
-            risultati_ricerca = [item["snippet"] for item in risultati_bing["webPages"]["value"]]
-
-    # Struttura i risultati in un dizionario
+    # Costruisce il dizionario dei risultati
     risultato = {
-        "Istruzioni": risultati_istruzioni,
-        "Esempi_Storici": risultati_esempi["DESCRIZIONE DETTAGLIATA"].tolist(),
-        "Risultati_Web": risultati_ricerca
+        "Risultati Web": risultati_web,
+        "Istruzioni": istruzioni_locale if istruzioni_locale else ["Nessuna istruzione specifica trovata."],
+        "Esempi_Storici": esempi_lavorazioni["DESCRIZIONE DETTAGLIATA"].tolist() or ["Nessun esempio disponibile per questa categoria."]
     }
     return risultato
 
@@ -84,35 +72,28 @@ st.title("Assistente per Computi Metrici Estimativi")
 
 # Selezione della macroarea
 macroarea = st.selectbox("Seleziona la macroarea", list(dict_lavorazioni.keys()))
-
-# Campo di ricerca testuale
-ricerca_testuale = st.text_input("Cosa ti serve? Descrivi cosa stai cercando:")
+# Campo di testo per la ricerca
+query = st.text_input("Inserisci una descrizione o un dettaglio per arricchire la ricerca")
 
 # Bottone per ottenere i suggerimenti
 if st.button("Ottieni suggerimenti"):
-    # Ottiene i suggerimenti per la macroarea selezionata e il campo di testo
-    suggerimenti = suggerisci_lavorazioni(macroarea, ricerca_testuale)
+    # Ottiene i suggerimenti per la macroarea selezionata
+    suggerimenti = suggerisci_lavorazioni(macroarea, query)
 
-    # Visualizza le istruzioni
-    st.subheader("Istruzioni dalla documentazione")
-    if suggerimenti["Istruzioni"]:
-        for istruzione in suggerimenti["Istruzioni"]:
-            st.write("- " + istruzione)
-    else:
-        st.write("Nessuna istruzione specifica trovata.")
-
-    # Visualizza gli esempi storici
-    st.subheader("Esempi Storici")
-    if suggerimenti["Esempi_Storici"]:
-        for esempio in suggerimenti["Esempi_Storici"]:
-            st.write("- " + esempio)
-    else:
-        st.write("Nessun esempio disponibile per questa categoria.")
-
-    # Visualizza i risultati della ricerca web
+    # Visualizza i risultati web
     st.subheader("Risultati Web")
-    if suggerimenti["Risultati_Web"]:
-        for risultato in suggerimenti["Risultati_Web"]:
+    if suggerimenti["Risultati Web"]:
+        for risultato in suggerimenti["Risultati Web"]:
             st.write("- " + risultato)
     else:
         st.write("Nessun risultato trovato online.")
+
+    # Visualizza le istruzioni
+    st.subheader("Istruzioni dalla documentazione")
+    for istruzione in suggerimenti["Istruzioni"]:
+        st.write("- " + istruzione)
+
+    # Visualizza gli esempi storici
+    st.subheader("Esempi Storici")
+    for esempio in suggerimenti["Esempi_Storici"]:
+        st.write("- " + esempio)
