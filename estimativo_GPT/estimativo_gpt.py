@@ -70,7 +70,7 @@ def suggerisci_lavorazioni(macroarea, ricerca_testuale):
     # Struttura i risultati in un dizionario
     risultato = {
         "Istruzioni": risultati_istruzioni,
-        "Esempi_Storici": risultati_esempi["DESCRIZIONE DETTAGLIATA"].to_dict(orient="records"),
+        "Esempi_Storici": risultati_esempi["DESCRIZIONE DETTAGLIATA"].tolist(),
         "Risultati_Web": risultati_ricerca
     }
     return risultato
@@ -112,4 +112,5 @@ if st.button("Ottieni suggerimenti"):
             st.write("- " + risultato)
     else:
         st.write("Nessun risultato trovato online.")
+
 
