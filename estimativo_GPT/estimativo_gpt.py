@@ -9,8 +9,8 @@ nltk.download('punkt')
 nltk.download('wordnet')
 
 # Percorso dei file
-path_istruzioni = r"C:\Users\mauri\Documents\estimativo GPT\istruzioni estimativo.xls"
-path_esempio = r"C:\Users\mauri\Documents\estimativo GPT\esempio.xls"
+path_istruzioni = "estimativo_GPT/istruzioni estimativo.xls"
+path_esempio = "estimativo_GPT/esempio.xls"
 
 # Carica i file delle istruzioni ed esempio usando solo 'openpyxl'
 istruzioni = pd.read_excel(path_istruzioni, engine='openpyxl')
