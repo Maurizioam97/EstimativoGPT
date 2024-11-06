@@ -31,7 +31,7 @@ for index, row in istruzioni.iterrows():
 df_esempio = df_esempio[["CATEGORIA", "DESCRIZIONE DETTAGLIATA"]]
 
 # Imposta la chiave API e l'endpoint per la Bing Search API
-api_key = "98721019-813a-4987-94ce-ee3ac6e28ad2"  # Sostituisci con la tua chiave API di Azure
+api_key = "52e5a5be8d4e4a72aa97246b33c429f1"  # Sostituisci con la tua chiave API di Azure
 endpoint = "https://api.bing.microsoft.com/v7.0/search"
 
 # Funzione per fare una ricerca web su Bing
