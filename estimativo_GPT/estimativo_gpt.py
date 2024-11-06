@@ -41,7 +41,9 @@ def ricerca_web(query):
     response = requests.get(endpoint, headers=headers, params=params)
 
     if response.status_code == 200:
-        return [item["snippet"] for item in response.json().get("webPages", {}).get("value", [])]
+        data = response.json()
+        print("Risposta Bing:", data)  # Stampa la risposta completa per debug
+        return [item["snippet"] for item in data.get("webPages", {}).get("value", [])]
     else:
         print("Errore nella ricerca:", response.status_code, response.text)
         return []
