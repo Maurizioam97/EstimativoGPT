@@ -1,4 +1,4 @@
-pandas
-streamlit
-nltk
-openpyxl
+pandas==1.5.3
+streamlit==1.24.0
+nltk==3.8.1
+openpyxl==3.0.9
