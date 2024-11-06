@@ -30,23 +30,60 @@ for index, row in istruzioni.iterrows():
 # Carica solo le colonne "CATEGORIA" e "DESCRIZIONE DETTAGLIATA" dal file degli esempi
 df_esempio = df_esempio[["CATEGORIA", "DESCRIZIONE DETTAGLIATA"]]
 
-# Imposta la chiave API e l'endpoint per la Bing Search API
-api_key = "52e5a5be8d4e4a72aa97246b33c429f1"  # Sostituisci con la tua chiave API di Azure
-endpoint = "https://api.bing.microsoft.com/v7.0/search"
+# Configura la Bing Search API
+bing_api_key = "52e5a5be8d4e4a72aa97246b33c429f1"
+bing_endpoint = "https://api.bing.microsoft.com/v7.0/search"
+
+# Configura Azure OpenAI API
+azure_openai_api_key = "2ill4A68l6BfyxK9xm6drYIzbKPX8yuPMg2BvJKtPgeXlJyn9bgsJQQJ99AKAC5RqLJXJ3w3AAABACOGIslu"
+azure_openai_endpoint = "https://estimativogpt.openai.azure.com/"
 
 # Funzione per fare una ricerca web su Bing
 def ricerca_web(query):
-    headers = {"Ocp-Apim-Subscription-Key": api_key}
+    headers = {"Ocp-Apim-Subscription-Key": bing_api_key}
     params = {"q": query, "textDecorations": True, "textFormat": "HTML"}
-    response = requests.get(endpoint, headers=headers, params=params)
-
+    response = requests.get(bing_endpoint, headers=headers, params=params)
+    
     if response.status_code == 200:
-        data = response.json()
-        print("Risposta Bing:", data)  # Stampa la risposta completa per debug
-        return [item["snippet"] for item in data.get("webPages", {}).get("value", [])]
+        results = response.json().get("webPages", {}).get("value", [])
+        return [result["snippet"] for result in results]
     else:
-        print("Errore nella ricerca:", response.status_code, response.text)
+        print("Errore:", response.status_code, response.text)
         return []
+
+# Funzione per sintetizzare i risultati usando Azure OpenAI GPT-4
+def sintetizza_risposta(query, snippets, istruzioni_locale, esempi_lavorazioni):
+    # Prepara il prompt con i risultati di Bing e i dati locali
+    prompt = f"Domanda: {query}\n\nEcco alcune informazioni trovate online:\n"
+    for i, snippet in enumerate(snippets, start=1):
+        prompt += f"{i}. {snippet}\n"
+    
+    prompt += "\nEcco alcune istruzioni trovate nella documentazione:\n"
+    for i, istruzione in enumerate(istruzioni_locale, start=1):
+        prompt += f"{i}. {istruzione}\n"
+
+    prompt += "\nEcco alcuni esempi storici correlati:\n"
+    for i, esempio in enumerate(esempi_lavorazioni, start=1):
+        prompt += f"{i}. {esempio}\n"
+    
+    prompt += "\nFornisci una risposta sintetizzata e dettagliata basata su queste informazioni."
+
+    # Chiamata a Azure OpenAI API
+    headers = {
+        "Content-Type": "application/json",
+        "api-key": azure_openai_api_key
+    }
+    data = {
+        "prompt": prompt,
+        "max_tokens": 200,
+        "temperature": 0.7
+    }
+    response = requests.post(azure_openai_endpoint, headers=headers, json=data)
+    if response.status_code == 200:
+        return response.json()["choices"][0]["text"].strip()
+    else:
+        print("Errore nella risposta di Azure OpenAI:", response.status_code, response.text)
+        return "Errore nella generazione della risposta."
 
 # Funzione aggiornata per ottenere suggerimenti con priorità alla ricerca web
 def suggerisci_lavorazioni(macroarea, query):
@@ -59,13 +96,17 @@ def suggerisci_lavorazioni(macroarea, query):
     # Esempi storici per la categoria selezionata
     esempi_lavorazioni = df_esempio[
         df_esempio['CATEGORIA'].str.contains(macroarea, case=False, na=False)
-    ].dropna(subset=["DESCRIZIONE DETTAGLIATA"])
+    ]["DESCRIZIONE DETTAGLIATA"].dropna().tolist()
+
+    # Sintetizza la risposta combinando i risultati
+    risposta_sintetizzata = sintetizza_risposta(query, risultati_web, istruzioni_locale, esempi_lavorazioni)
 
     # Costruisce il dizionario dei risultati
     risultato = {
         "Risultati Web": risultati_web,
         "Istruzioni": istruzioni_locale if istruzioni_locale else ["Nessuna istruzione specifica trovata."],
-        "Esempi_Storici": esempi_lavorazioni["DESCRIZIONE DETTAGLIATA"].tolist() or ["Nessun esempio disponibile per questa categoria."]
+        "Esempi_Storici": esempi_lavorazioni or ["Nessun esempio disponibile per questa categoria."],
+        "Risposta_Sintetizzata": risposta_sintetizzata
     }
     return risultato
 
@@ -81,6 +122,10 @@ query = st.text_input("Inserisci una descrizione o un dettaglio per arricchire l
 if st.button("Ottieni suggerimenti"):
     # Ottiene i suggerimenti per la macroarea selezionata
     suggerimenti = suggerisci_lavorazioni(macroarea, query)
+
+    # Visualizza la risposta sintetizzata
+    st.subheader("Risposta AI Sintetizzata")
+    st.write(suggerimenti["Risposta_Sintetizzata"])
 
     # Visualizza i risultati web
     st.subheader("Risultati Web")
