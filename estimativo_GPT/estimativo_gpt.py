@@ -56,13 +56,17 @@ def suggerisci_lavorazioni(macroarea, ricerca_testuale):
         df_esempio['CATEGORIA'].str.contains(macroarea, case=False, na=False)
     ].dropna(subset=["DESCRIZIONE DETTAGLIATA"])
 
-    # Cerca nel file delle istruzioni e nell'esempio storico usando il campo di testo
-    risultati_istruzioni = [istr for istr in istruzioni if ricerca_testuale.lower() in istr.lower()]
-    risultati_esempi = esempi_lavorazioni[esempi_lavorazioni['DESCRIZIONE DETTAGLIATA'].str.contains(ricerca_testuale, case=False, na=False)]
+    # Filtra risultati in base al campo di ricerca testuale
+    if ricerca_testuale:
+        risultati_istruzioni = [istr for istr in istruzioni if ricerca_testuale.lower() in istr.lower()]
+        risultati_esempi = esempi_lavorazioni[esempi_lavorazioni['DESCRIZIONE DETTAGLIATA'].str.contains(ricerca_testuale, case=False, na=False)]
+    else:
+        risultati_istruzioni = istruzioni
+        risultati_esempi = esempi_lavorazioni
 
-    # Se non ci sono abbastanza informazioni, effettua una ricerca web
+    # Se non ci sono risultati nei file locali, effettua una ricerca web
     risultati_ricerca = []
-    if not risultati_istruzioni and risultati_esempi.empty:
+    if not risultati_istruzioni and risultati_esempi.empty and ricerca_testuale:
         risultati_bing = ricerca_web(f"{ricerca_testuale} computo metrico {macroarea}")
         if risultati_bing:
             risultati_ricerca = [item["snippet"] for item in risultati_bing["webPages"]["value"]]
@@ -112,5 +116,3 @@ if st.button("Ottieni suggerimenti"):
             st.write("- " + risultato)
     else:
         st.write("Nessun risultato trovato online.")
-
-
