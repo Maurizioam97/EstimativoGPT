@@ -35,7 +35,7 @@ bing_api_key = "52e5a5be8d4e4a72aa97246b33c429f1"  # Sostituisci con la tua chia
 bing_endpoint = "https://api.bing.microsoft.com/v7.0/search"
 
 # Configura Azure OpenAI API
-azure_openai_api_key = "2ill4A68l6BfyxK9xm6drYIzbKPX8yuPMg2BvJKtPgeXlJyn9bgsJQQJ99AKAC5RqLJXJ3w3AAABACOGIslu"  # Sostituisci con la tua chiave API di Azure OpenAI
+azure_openai_api_key = "2ill4A68l6BfyxK9xm6drYIzbKPX8yuPMg2BvJKtPgeXlJyn9bgsJQQJ99AKAC5RqLJXJ3w3AAABACOGIslu"
 azure_openai_endpoint = "https://estimativogpt.openai.azure.com/openai/deployments/gpt-35-turbo"
 api_version = "2024-08-01-preview"
 
@@ -52,11 +52,10 @@ def ricerca_web(query):
         print("Errore:", response.status_code, response.text)
         return []
 
-# Funzione per sintetizzare i risultati usando Azure OpenAI
+# Funzione per sintetizzare i risultati usando Azure OpenAI GPT-4
 def sintetizza_risposta(macroarea, query, snippets, istruzioni_locale, esempi_lavorazioni):
     # Prepara il prompt con i risultati di Bing e i dati locali
-    prompt = f"Stiamo operando nella macroarea: {macroarea}.\n"
-    prompt += f"Descrizione del lavoro: {query}\n\n"
+    prompt = f"Domanda: Stai lavorando sulla categoria {macroarea}. Fornisci una lista dettagliata delle lavorazioni necessarie per eseguire il seguente lavoro: '{query}'\n\n"
     prompt += "Ecco alcune informazioni trovate online:\n"
     for i, snippet in enumerate(snippets, start=1):
         prompt += f"{i}. {snippet}\n"
@@ -69,7 +68,7 @@ def sintetizza_risposta(macroarea, query, snippets, istruzioni_locale, esempi_la
     for i, esempio in enumerate(esempi_lavorazioni, start=1):
         prompt += f"{i}. {esempio}\n"
     
-    prompt += "\nFornisci una lista di lavorazioni dettagliate e specifiche che occorrono per completare il lavoro descritto relativo alla macroarea selezionata, questa lista mi servirà per andare a cercare nel mio prezzario regionale di riferimento le voci relative per poter comporre un computo metrico estimativo."
+    prompt += "\nIn base a queste informazioni, fornisci un elenco di lavorazioni necessarie solo per la categoria {macroarea}. questo elenco mi servirà per sapere quali voci andare a cercare all'interno del mio prezzario regionale di riferimento e di conseguenza creare un computo metrico estimativo"
 
     # Chiamata a Azure OpenAI API
     headers = {
@@ -78,8 +77,8 @@ def sintetizza_risposta(macroarea, query, snippets, istruzioni_locale, esempi_la
     }
     data = {
         "prompt": prompt,
-        "max_tokens": 400,  # aumentato per una risposta più completa
-        "temperature": 0.5  # ridotto per risposte più consistenti e mirate
+        "max_tokens": 300,
+        "temperature": 0.7
     }
     completions_endpoint = f"{azure_openai_endpoint}/completions?api-version={api_version}"
     response = requests.post(completions_endpoint, headers=headers, json=data)
@@ -106,10 +105,8 @@ def suggerisci_lavorazioni(macroarea, query):
     # Sintetizza la risposta combinando i risultati
     risposta_sintetizzata = sintetizza_risposta(macroarea, query, risultati_web, istruzioni_locale, esempi_lavorazioni)
 
-    # Costruisce il dizionario dei risultati senza mostrare i risultati web all'utente
+    # Costruisce il dizionario dei risultati
     risultato = {
-        "Istruzioni": istruzioni_locale if istruzioni_locale else ["Nessuna istruzione specifica trovata."],
-        "Esempi_Storici": esempi_lavorazioni or ["Nessun esempio disponibile per questa categoria."],
         "Risposta_Sintetizzata": risposta_sintetizzata
     }
     return risultato
@@ -130,13 +127,3 @@ if st.button("Ottieni suggerimenti"):
     # Visualizza la risposta sintetizzata
     st.subheader("Risposta AI Sintetizzata")
     st.write(suggerimenti["Risposta_Sintetizzata"])
-
-    # Visualizza le istruzioni
-    st.subheader("Istruzioni dalla documentazione")
-    for istruzione in suggerimenti["Istruzioni"]:
-        st.write("- " + istruzione)
-
-    # Visualizza gli esempi storici
-    st.subheader("Esempi Storici")
-    for esempio in suggerimenti["Esempi_Storici"]:
-        st.write("- " + esempio)
