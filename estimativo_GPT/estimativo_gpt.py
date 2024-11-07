@@ -36,8 +36,7 @@ bing_endpoint = "https://api.bing.microsoft.com/v7.0/search"
 
 # Configura Azure OpenAI API
 azure_openai_api_key = "2ill4A68l6BfyxK9xm6drYIzbKPX8yuPMg2BvJKtPgeXlJyn9bgsJQQJ99AKAC5RqLJXJ3w3AAABACOGIslu"  # Sostituisci con la tua chiave API di Azure OpenAI
-azure_openai_endpoint = "https://estimativogpt.openai.azure.com/openai/deployments/gpt-35-turbo/chat/completions"
-nome_modello = "gpt-35-turbo"  # Sostituisci con il nome esatto del deployment configurato in Azure OpenAI
+azure_openai_endpoint = "https://estimativogpt.openai.azure.com/openai/deployments/gpt-35-turbo"  # Assicurati che sia corretto
 api_version = "2024-08-01-preview"  # Usa la versione dell'API richiesta da Azure
 
 # Funzione per fare una ricerca web su Bing
@@ -80,7 +79,7 @@ def sintetizza_risposta(query, snippets, istruzioni_locale, esempi_lavorazioni):
         "max_tokens": 200,
         "temperature": 0.7
     }
-    completions_endpoint = f"{azure_openai_endpoint}openai/deployments/{nome_modello}/completions?api-version={api_version}"
+    completions_endpoint = f"{azure_openai_endpoint}/completions?api-version={api_version}"
     response = requests.post(completions_endpoint, headers=headers, json=data)
     
     if response.status_code == 200:
