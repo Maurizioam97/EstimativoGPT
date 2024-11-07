@@ -68,7 +68,7 @@ def sintetizza_risposta(macroarea, query, snippets, istruzioni_locale, esempi_la
     for i, esempio in enumerate(esempi_lavorazioni, start=1):
         prompt += f"{i}. {esempio}\n"
     
-    prompt += "\nIn base a queste informazioni, fornisci un elenco di lavorazioni necessarie solo per la categoria {macroarea}. questo elenco mi servirà per sapere quali voci andare a cercare all'interno del mio prezzario regionale di riferimento e di conseguenza creare un computo metrico estimativo"
+    prompt += "\nIn base a queste informazioni, fornisci un elenco di lavorazioni necessarie solo per la categoria {macroarea}. Questo elenco mi servirà per sapere quali voci andare a cercare all'interno del mio prezzario regionale di riferimento e di conseguenza creare un computo metrico estimativo."
 
     # Chiamata a Azure OpenAI API
     headers = {
@@ -105,9 +105,11 @@ def suggerisci_lavorazioni(macroarea, query):
     # Sintetizza la risposta combinando i risultati
     risposta_sintetizzata = sintetizza_risposta(macroarea, query, risultati_web, istruzioni_locale, esempi_lavorazioni)
 
-    # Costruisce il dizionario dei risultati
+    # Costruisce il dizionario dei risultati, includendo istruzioni ed esempi storici
     risultato = {
-        "Risposta_Sintetizzata": risposta_sintetizzata
+        "Risposta_Sintetizzata": risposta_sintetizzata,
+        "Istruzioni": istruzioni_locale,
+        "Esempi_Storici": esempi_lavorazioni
     }
     return risultato
 
@@ -130,10 +132,16 @@ if st.button("Ottieni suggerimenti"):
 
     # Visualizza le istruzioni
     st.subheader("Istruzioni dalla documentazione")
-    for istruzione in suggerimenti["Istruzioni"]:
-        st.write("- " + istruzione)
+    if suggerimenti["Istruzioni"]:
+        for istruzione in suggerimenti["Istruzioni"]:
+            st.write("- " + istruzione)
+    else:
+        st.write("Nessuna istruzione specifica trovata.")
 
     # Visualizza gli esempi storici
     st.subheader("Esempi Storici")
-    for esempio in suggerimenti["Esempi_Storici"]:
-        st.write("- " + esempio)
+    if suggerimenti["Esempi_Storici"]:
+        for esempio in suggerimenti["Esempi_Storici"]:
+            st.write("- " + esempio)
+    else:
+        st.write("Nessun esempio disponibile per questa categoria.")
