@@ -36,8 +36,8 @@ bing_endpoint = "https://api.bing.microsoft.com/v7.0/search"
 
 # Configura Azure OpenAI API
 azure_openai_api_key = "2ill4A68l6BfyxK9xm6drYIzbKPX8yuPMg2BvJKtPgeXlJyn9bgsJQQJ99AKAC5RqLJXJ3w3AAABACOGIslu"  # Sostituisci con la tua chiave API di Azure OpenAI
-azure_openai_endpoint = "https://estimativogpt.openai.azure.com/openai/deployments/gpt-35-turbo"  # Assicurati che sia corretto
-api_version = "2024-08-01-preview"  # Usa la versione dell'API richiesta da Azure
+azure_openai_endpoint = "https://estimativogpt.openai.azure.com/openai/deployments/gpt-35-turbo"
+api_version = "2024-08-01-preview"
 
 # Funzione per fare una ricerca web su Bing
 def ricerca_web(query):
@@ -52,10 +52,12 @@ def ricerca_web(query):
         print("Errore:", response.status_code, response.text)
         return []
 
-# Funzione per sintetizzare i risultati usando Azure OpenAI GPT-4
-def sintetizza_risposta(query, snippets, istruzioni_locale, esempi_lavorazioni):
+# Funzione per sintetizzare i risultati usando Azure OpenAI
+def sintetizza_risposta(macroarea, query, snippets, istruzioni_locale, esempi_lavorazioni):
     # Prepara il prompt con i risultati di Bing e i dati locali
-    prompt = f"Domanda: {query}\n\nEcco alcune informazioni trovate online:\n"
+    prompt = f"Stiamo operando nella macroarea: {macroarea}.\n"
+    prompt += f"Descrizione del lavoro: {query}\n\n"
+    prompt += "Ecco alcune informazioni trovate online:\n"
     for i, snippet in enumerate(snippets, start=1):
         prompt += f"{i}. {snippet}\n"
     
@@ -67,7 +69,7 @@ def sintetizza_risposta(query, snippets, istruzioni_locale, esempi_lavorazioni):
     for i, esempio in enumerate(esempi_lavorazioni, start=1):
         prompt += f"{i}. {esempio}\n"
     
-    prompt += "\nFornisci un elenco delle lavorazioni necessarie al fine di realizzare un computo metrico estimativo basandoti su queste informazioni."
+    prompt += "\nFornisci una lista di lavorazioni dettagliate e specifiche che occorrono per completare il lavoro descritto relativo alla macroarea selezionata, questa lista mi servirà per andare a cercare nel mio prezzario regionale di riferimento le voci relative per poter comporre un computo metrico estimativo."
 
     # Chiamata a Azure OpenAI API
     headers = {
@@ -76,8 +78,8 @@ def sintetizza_risposta(query, snippets, istruzioni_locale, esempi_lavorazioni):
     }
     data = {
         "prompt": prompt,
-        "max_tokens": 300,
-        "temperature": 0.7
+        "max_tokens": 400,  # aumentato per una risposta più completa
+        "temperature": 0.5  # ridotto per risposte più consistenti e mirate
     }
     completions_endpoint = f"{azure_openai_endpoint}/completions?api-version={api_version}"
     response = requests.post(completions_endpoint, headers=headers, json=data)
@@ -102,11 +104,10 @@ def suggerisci_lavorazioni(macroarea, query):
     ]["DESCRIZIONE DETTAGLIATA"].dropna().tolist()
 
     # Sintetizza la risposta combinando i risultati
-    risposta_sintetizzata = sintetizza_risposta(query, risultati_web, istruzioni_locale, esempi_lavorazioni)
+    risposta_sintetizzata = sintetizza_risposta(macroarea, query, risultati_web, istruzioni_locale, esempi_lavorazioni)
 
-    # Costruisce il dizionario dei risultati
+    # Costruisce il dizionario dei risultati senza mostrare i risultati web all'utente
     risultato = {
-        "Risultati Web": risultati_web,
         "Istruzioni": istruzioni_locale if istruzioni_locale else ["Nessuna istruzione specifica trovata."],
         "Esempi_Storici": esempi_lavorazioni or ["Nessun esempio disponibile per questa categoria."],
         "Risposta_Sintetizzata": risposta_sintetizzata
@@ -129,14 +130,6 @@ if st.button("Ottieni suggerimenti"):
     # Visualizza la risposta sintetizzata
     st.subheader("Risposta AI Sintetizzata")
     st.write(suggerimenti["Risposta_Sintetizzata"])
-
-    # Visualizza i risultati web
-    st.subheader("Risultati Web")
-    if suggerimenti["Risultati Web"]:
-        for risultato in suggerimenti["Risultati Web"]:
-            st.write("- " + risultato)
-    else:
-        st.write("Nessun risultato trovato online.")
 
     # Visualizza le istruzioni
     st.subheader("Istruzioni dalla documentazione")
