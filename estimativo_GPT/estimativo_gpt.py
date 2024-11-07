@@ -67,7 +67,7 @@ def sintetizza_risposta(query, snippets, istruzioni_locale, esempi_lavorazioni):
     for i, esempio in enumerate(esempi_lavorazioni, start=1):
         prompt += f"{i}. {esempio}\n"
     
-    prompt += "\nFornisci una risposta sintetizzata e dettagliata basata su queste informazioni."
+    prompt += "\nFornisci un elenco delle lavorazioni necessarie al fine di realizzare un computo metrico estimativo basandoti su queste informazioni."
 
     # Chiamata a Azure OpenAI API
     headers = {
@@ -76,7 +76,7 @@ def sintetizza_risposta(query, snippets, istruzioni_locale, esempi_lavorazioni):
     }
     data = {
         "prompt": prompt,
-        "max_tokens": 200,
+        "max_tokens": 300,
         "temperature": 0.7
     }
     completions_endpoint = f"{azure_openai_endpoint}/completions?api-version={api_version}"
