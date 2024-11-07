@@ -127,3 +127,13 @@ if st.button("Ottieni suggerimenti"):
     # Visualizza la risposta sintetizzata
     st.subheader("Risposta AI Sintetizzata")
     st.write(suggerimenti["Risposta_Sintetizzata"])
+
+    # Visualizza le istruzioni
+    st.subheader("Istruzioni dalla documentazione")
+    for istruzione in suggerimenti["Istruzioni"]:
+        st.write("- " + istruzione)
+
+    # Visualizza gli esempi storici
+    st.subheader("Esempi Storici")
+    for esempio in suggerimenti["Esempi_Storici"]:
+        st.write("- " + esempio)
