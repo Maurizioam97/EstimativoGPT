@@ -36,9 +36,9 @@ bing_endpoint = "https://api.bing.microsoft.com/v7.0/search"
 
 # Configura Azure OpenAI API
 azure_openai_api_key = "2ill4A68l6BfyxK9xm6drYIzbKPX8yuPMg2BvJKtPgeXlJyn9bgsJQQJ99AKAC5RqLJXJ3w3AAABACOGIslu"  # Sostituisci con la tua chiave API di Azure OpenAI
-azure_openai_endpoint = "https://estimativogpt.openai.azure.com/"
-nome_modello = "<nome_del_modello_deployment>"  # Sostituisci con il nome esatto del deployment configurato in Azure OpenAI
-api_version = "2022-12-01"  # Usa la versione dell'API richiesta da Azure
+azure_openai_endpoint = "https://estimativogpt.openai.azure.com/openai/deployments/gpt-35-turbo/chat/completions?api-version=2024-08-01-preview"
+nome_modello = "gpt-35-turbo"  # Sostituisci con il nome esatto del deployment configurato in Azure OpenAI
+api_version = "2024-08-01-preview"  # Usa la versione dell'API richiesta da Azure
 
 # Funzione per fare una ricerca web su Bing
 def ricerca_web(query):
