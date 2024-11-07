@@ -31,12 +31,14 @@ for index, row in istruzioni.iterrows():
 df_esempio = df_esempio[["CATEGORIA", "DESCRIZIONE DETTAGLIATA"]]
 
 # Configura la Bing Search API
-bing_api_key = "52e5a5be8d4e4a72aa97246b33c429f1"
+bing_api_key = "52e5a5be8d4e4a72aa97246b33c429f1"  # Sostituisci con la tua chiave API di Bing
 bing_endpoint = "https://api.bing.microsoft.com/v7.0/search"
 
 # Configura Azure OpenAI API
-azure_openai_api_key = "2ill4A68l6BfyxK9xm6drYIzbKPX8yuPMg2BvJKtPgeXlJyn9bgsJQQJ99AKAC5RqLJXJ3w3AAABACOGIslu"
+azure_openai_api_key = "2ill4A68l6BfyxK9xm6drYIzbKPX8yuPMg2BvJKtPgeXlJyn9bgsJQQJ99AKAC5RqLJXJ3w3AAABACOGIslu"  # Sostituisci con la tua chiave API di Azure OpenAI
 azure_openai_endpoint = "https://estimativogpt.openai.azure.com/"
+nome_modello = "<nome_del_modello_deployment>"  # Sostituisci con il nome esatto del deployment configurato in Azure OpenAI
+api_version = "2022-12-01"  # Usa la versione dell'API richiesta da Azure
 
 # Funzione per fare una ricerca web su Bing
 def ricerca_web(query):
@@ -78,7 +80,9 @@ def sintetizza_risposta(query, snippets, istruzioni_locale, esempi_lavorazioni):
         "max_tokens": 200,
         "temperature": 0.7
     }
-    response = requests.post(azure_openai_endpoint, headers=headers, json=data)
+    completions_endpoint = f"{azure_openai_endpoint}openai/deployments/{nome_modello}/completions?api-version={api_version}"
+    response = requests.post(completions_endpoint, headers=headers, json=data)
+    
     if response.status_code == 200:
         return response.json()["choices"][0]["text"].strip()
     else:
