@@ -10,7 +10,7 @@ nltk.download('punkt')
 nltk.download('wordnet')
 
 # Percorso dei file
-path_istruzioni = "estimativo_GPT/istruzioni estimativo.xlsx"
+path_istruzioni = "estimativo_GPT/Istruzioni estimativo.xlsx"
 path_esempio = "estimativo_GPT/esempio.xls"
 
 # Carica i file delle istruzioni ed esempio usando solo 'openpyxl'
