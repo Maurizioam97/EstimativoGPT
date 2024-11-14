@@ -70,7 +70,7 @@ def sintetizza_risposta(macroarea, query, snippets, istruzioni_locale, esempi_la
     for i, esempio in enumerate(esempi_lavorazioni, start=1):
         prompt += f"- {esempio}\n"
     
-    prompt += "\nIn base a queste informazioni, fornisci un elenco dettagliato delle lavorazioni necessarie solo per la categoria {macroarea}. Elenca solo le lavorazioni, senza includere etichette come 'Sottocategoria' o 'Note Aggiuntive'. Concentrati solo sull'elenco delle attività pratiche da eseguire."
+    prompt += "\nIn base a queste informazioni, fornisci un elenco dettagliato delle lavorazioni necessarie solo per la categoria {macroarea}. Elenca solo le lavorazioni, senza includere etichette come 'Sottocategoria' o 'Note Aggiuntive'. Concentrati solo sull'elenco delle attività pratiche da eseguire e ricordati che mi serve un elenco."
 
     # Chiamata a Azure OpenAI API
     headers = {
@@ -79,7 +79,7 @@ def sintetizza_risposta(macroarea, query, snippets, istruzioni_locale, esempi_la
     }
     data = {
         "prompt": prompt,
-        "max_tokens": 300,
+        "max_tokens": 350,
         "temperature": 0.7
     }
     completions_endpoint = f"{azure_openai_endpoint}/completions?api-version={api_version}"
