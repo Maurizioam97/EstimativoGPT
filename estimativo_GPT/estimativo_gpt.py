@@ -10,8 +10,8 @@ nltk.download('punkt')
 nltk.download('wordnet')
 
 # Percorso dei file
-path_istruzioni = "estimativo_GPT/istruzioni estimativo.xls"
-path_esempio = "estimativo_GPT/esempio.xls"
+path_istruzioni = "estimativo_GPT/istruzioni estimativo.xlsx"
+path_esempio = "estimativo_GPT/esempio.xlsx"
 
 # Carica i file delle istruzioni ed esempio usando solo 'openpyxl'
 istruzioni = pd.read_excel(path_istruzioni, engine='openpyxl')
@@ -21,17 +21,24 @@ df_esempio = pd.read_excel(path_esempio, engine='openpyxl')
 dict_lavorazioni = {}
 for index, row in istruzioni.iterrows():
     categoria = row['Categoria']
+    sottocategoria = row['Sottocategoria']  # Aggiornato da 'Macroarea' a 'Sottocategoria'
     descrizione = row['Descrizione dettagliata']
+    note_aggiuntive = row['Note Aggiuntive']
+
+    # Aggiungi alla struttura del dizionario per includere sottocategoria e note aggiuntive
     if categoria not in dict_lavorazioni:
-        dict_lavorazioni[categoria] = [descrizione]
-    else:
-        dict_lavorazioni[categoria].append(descrizione)
+        dict_lavorazioni[categoria] = []
+    dict_lavorazioni[categoria].append({
+        "Sottocategoria": sottocategoria,
+        "Descrizione": descrizione,
+        "Note Aggiuntive": note_aggiuntive
+    })
 
 # Carica solo le colonne "CATEGORIA" e "DESCRIZIONE DETTAGLIATA" dal file degli esempi
 df_esempio = df_esempio[["CATEGORIA", "DESCRIZIONE DETTAGLIATA"]]
 
 # Configura la Bing Search API
-bing_api_key = "52e5a5be8d4e4a72aa97246b33c429f1"  # Sostituisci con la tua chiave API di Bing
+bing_api_key = "52e5a5be8d4e4a72aa97246b33c429f1"
 bing_endpoint = "https://api.bing.microsoft.com/v7.0/search"
 
 # Configura Azure OpenAI API
@@ -54,7 +61,6 @@ def ricerca_web(query):
 
 # Funzione per sintetizzare i risultati usando Azure OpenAI GPT-4
 def sintetizza_risposta(macroarea, query, snippets, istruzioni_locale, esempi_lavorazioni):
-    # Prepara il prompt con i risultati di Bing e i dati locali
     prompt = f"Domanda: Stai lavorando sulla categoria {macroarea}. Fornisci una lista dettagliata delle lavorazioni necessarie per eseguire il seguente lavoro: '{query}'\n\n"
     prompt += "Ecco alcune informazioni trovate online:\n"
     for i, snippet in enumerate(snippets, start=1):
@@ -62,7 +68,7 @@ def sintetizza_risposta(macroarea, query, snippets, istruzioni_locale, esempi_la
     
     prompt += "\nEcco alcune istruzioni trovate nella documentazione:\n"
     for i, istruzione in enumerate(istruzioni_locale, start=1):
-        prompt += f"{i}. {istruzione}\n"
+        prompt += f"{i}. Sottocategoria: {istruzione['Sottocategoria']} - Descrizione: {istruzione['Descrizione']} - Note Aggiuntive: {istruzione['Note Aggiuntive']}\n"
 
     prompt += "\nEcco alcuni esempi storici correlati:\n"
     for i, esempio in enumerate(esempi_lavorazioni, start=1):
@@ -70,7 +76,6 @@ def sintetizza_risposta(macroarea, query, snippets, istruzioni_locale, esempi_la
     
     prompt += "\nIn base a queste informazioni, fornisci un elenco di lavorazioni necessarie solo per la categoria {macroarea}. Questo elenco mi servirà per sapere quali voci andare a cercare all'interno del mio prezzario regionale di riferimento e di conseguenza creare un computo metrico estimativo."
 
-    # Chiamata a Azure OpenAI API
     headers = {
         "Content-Type": "application/json",
         "api-key": azure_openai_api_key
@@ -91,21 +96,14 @@ def sintetizza_risposta(macroarea, query, snippets, istruzioni_locale, esempi_la
 
 # Funzione aggiornata per ottenere suggerimenti con priorità alla ricerca web
 def suggerisci_lavorazioni(macroarea, query):
-    # Risultati della ricerca web
     risultati_web = ricerca_web(f"{macroarea} {query}")
-
-    # Istruzioni per la macroarea dai file locali
     istruzioni_locale = dict_lavorazioni.get(macroarea, [])
-
-    # Esempi storici per la categoria selezionata
     esempi_lavorazioni = df_esempio[
         df_esempio['CATEGORIA'].str.contains(macroarea, case=False, na=False)
     ]["DESCRIZIONE DETTAGLIATA"].dropna().tolist()
 
-    # Sintetizza la risposta combinando i risultati
     risposta_sintetizzata = sintetizza_risposta(macroarea, query, risultati_web, istruzioni_locale, esempi_lavorazioni)
 
-    # Costruisce il dizionario dei risultati, includendo istruzioni ed esempi storici
     risultato = {
         "Risposta_Sintetizzata": risposta_sintetizzata,
         "Istruzioni": istruzioni_locale,
@@ -118,27 +116,24 @@ st.title("Assistente per Computi Metrici Estimativi")
 
 # Selezione della macroarea
 macroarea = st.selectbox("Seleziona la macroarea", list(dict_lavorazioni.keys()))
-# Campo di testo per la ricerca
 query = st.text_input("Inserisci una descrizione o un dettaglio per arricchire la ricerca")
 
 # Bottone per ottenere i suggerimenti
 if st.button("Ottieni suggerimenti"):
-    # Ottiene i suggerimenti per la macroarea selezionata
     suggerimenti = suggerisci_lavorazioni(macroarea, query)
 
-    # Visualizza la risposta sintetizzata
     st.subheader("Risposta AI Sintetizzata")
     st.write(suggerimenti["Risposta_Sintetizzata"])
 
-    # Visualizza le istruzioni
     st.subheader("Istruzioni dalla documentazione")
     if suggerimenti["Istruzioni"]:
-        for istruzione in suggerimenti["Istruzioni"]:
-            st.write("- " + istruzione)
+        for item in suggerimenti["Istruzioni"]:
+            st.write(f"- Sottocategoria: {item['Sottocategoria']}")
+            st.write(f"  Descrizione: {item['Descrizione']}")
+            st.write(f"  Note Aggiuntive: {item['Note Aggiuntive']}")
     else:
         st.write("Nessuna istruzione specifica trovata.")
 
-    # Visualizza gli esempi storici
     st.subheader("Esempi Storici")
     if suggerimenti["Esempi_Storici"]:
         for esempio in suggerimenti["Esempi_Storici"]:
