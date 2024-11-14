@@ -22,7 +22,7 @@ dict_lavorazioni = {}
 for index, row in istruzioni.iterrows():
     categoria = row['Categoria']
     sottocategoria = row['Sottocategoria']  # Aggiornato da 'Macroarea' a 'Sottocategoria'
-    descrizione = row['Descrizione dettagliata']
+    descrizione = row['Descrizione Dettagliata']
     note_aggiuntive = row['Note Aggiuntive']
 
     # Aggiungi alla struttura del dizionario per includere sottocategoria e note aggiuntive
